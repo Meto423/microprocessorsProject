@@ -2,7 +2,7 @@
 #include "I2Cdev.h"
 
 #include "MPU6050_6Axis_MotionApps20.h"
-//#include "MPU6050.h" // not necessary if using MotionApps include file
+//#include "MPU6050.h" // 
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -12,28 +12,26 @@
 
 // class default I2C address is 0x68
 
-
+//Object declaration for mpu-6050
 MPU6050 mpu;
 
 
-/* =========================================================================
-   NOTE: In addition to connection 3.3v, GND, SDA, and SCL, this sketch
+/* 
+   NOTE: In addition to connection 5v, GND, SDA, and SCL, this sketch
    depends on the MPU-6050's INT pin being connected to the Arduino's
-   external interrupt #0 pin. On the Arduino Uno and Mega 2560, this is
-   digital I/O pin 2.
- * ========================================================================= */
+   external interrupt #2 digital pin */
 
 
 
 
 // uncomment "OUTPUT_TEAPOT" if you want output that matches the
-// format used for the InvenSense teapot demo
+// format used for the Processing
 #define OUTPUT_TEAPOT
 
 
 
-#define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
-#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
+#define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno 
+#define LED_PIN 13 
 bool blinkState = false;
 
 // MPU control/status vars
@@ -58,10 +56,8 @@ uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\
 
 
 
-// ================================================================
-// ===               INTERRUPT DETECTION ROUTINE                ===
-// ================================================================
-
+ 
+// INTERRUPT DETECTION ROUTINE
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 void dmpDataReady() {
     mpuInterrupt = true;
@@ -69,24 +65,18 @@ void dmpDataReady() {
 
 
 
-// ================================================================
-// ===                      INITIAL SETUP                       ===
-// ================================================================
-
 void setup() {
-    // join I2C bus (I2Cdev library doesn't do this automatically)
+    // join to I2C bus 
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
         Wire.begin();
-        Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+        Wire.setClock(400000); // 400kHz I2C clock.
     #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
         Fastwire::setup(400, true);
     #endif
 
     // initialize serial communication
-    // (115200 chosen because it is required for Teapot Demo output, but it's
-    // really up to you depending on your project)
     Serial.begin(115200);
-    while (!Serial); // wait for Leonardo enumeration, others continue immediately
+    while (!Serial);// wait for setting up the serial port
 
     // initialize device
     Serial.println(F("Initializing I2C devices..."));
@@ -107,7 +97,7 @@ void setup() {
     Serial.println(F("Initializing DMP..."));
     devStatus = mpu.dmpInitialize();
 
-    // supply your own gyro offsets here, scaled for min sensitivity
+    // gyro offset for sensivity
     mpu.setXGyroOffset(220);
     mpu.setYGyroOffset(76);
     mpu.setZGyroOffset(-85);
@@ -119,7 +109,7 @@ void setup() {
         Serial.println(F("Enabling DMP..."));
         mpu.setDMPEnabled(true);
 
-        // enable Arduino interrupt detection
+        // Interrupt configuration for the Mpu-6050
         Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
         attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
         mpuIntStatus = mpu.getIntStatus();
@@ -144,12 +134,6 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
 }
 
-
-
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
-
 void loop() {
     // if programming failed, don't try to do anything
     if (!dmpReady) return;
@@ -166,13 +150,13 @@ void loop() {
     // get current FIFO count
     fifoCount = mpu.getFIFOCount();
 
-    // check for overflow (this should never happen unless our code is too inefficient)
+    // check for overflow 
     if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
         // reset so we can continue cleanly
         mpu.resetFIFO();
         Serial.println(F("FIFO overflow!"));
 
-    // otherwise, check for DMP data ready interrupt (this should happen frequently)
+    // otherwise, check for DMP data ready interrupt 
     } else if (mpuIntStatus & 0x02) {
         // wait for correct available data length, should be a VERY short wait
         while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
@@ -203,7 +187,7 @@ void loop() {
         
     
         #ifdef OUTPUT_TEAPOT
-            // display quaternion values in InvenSense Teapot demo format:
+            // display quaternion values in Processing Teapot format:
             teapotPacket[2] = fifoBuffer[0];
             teapotPacket[3] = fifoBuffer[1];
             teapotPacket[4] = fifoBuffer[4];
@@ -213,7 +197,7 @@ void loop() {
             teapotPacket[8] = fifoBuffer[12];
             teapotPacket[9] = fifoBuffer[13];
             Serial.write(teapotPacket, 14);
-            teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
+            teapotPacket[11]++; // packetCount
         #endif
 
         // blink LED to indicate activity
